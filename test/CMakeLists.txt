@@ -5,6 +5,9 @@ configure_lit_site_cfg(
 )
 
 set(SCHEMA_TEST_DEPENDS FileCheck count not schema-opt)
+if(TARGET mlir-translate)
+  list(APPEND SCHEMA_TEST_DEPENDS mlir-translate)
+endif()
 
 add_lit_testsuite(check-schema "Running the json-schema-mlir regression tests"
   ${CMAKE_CURRENT_BINARY_DIR}
