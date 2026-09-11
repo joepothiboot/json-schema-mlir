@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>json-schema-mlir — a guided tour</title>
+<meta name="description" content="A narrated walkthrough of an out-of-tree MLIR dialect that compiles JSON Schema into optimized native validators.">
+<meta name="color-scheme" content="light">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<a class="skip" href="#tour">Skip to the tour</a>
+<div class="progress" aria-hidden="true"><span id="progress-bar"></span></div>
+
+<header class="masthead">
+  <div class="wrap masthead-inner">
+    <a class="wordmark" href="#top">json&#8209;schema&#8209;mlir</a>
+    <nav class="masthead-nav" aria-label="Section">
+      <a href="#tour">Tour</a>
+      <a href="#diff">Before / after</a>
+      <a href="#results">Results</a>
+      <a href="#links">Source</a>
+    </nav>
+  </div>
+</header>
+
+<noscript>
+  <div class="wrap noscript">
+    This tour renders from a static data file and needs JavaScript enabled.
+    The full source and a written walkthrough are in the repository README.
+  </div>
+</noscript>
+
+<main id="top">
+  <div id="sample-strip"></div>
+  <section id="hero" class="hero"></section>
+  <section id="pipeline" class="pipeline-section"></section>
+
+  <div class="tour-layout" id="tour">
+    <aside class="rail" aria-label="Tour progress">
+      <p class="rail-title">The tour</p>
+      <ol id="rail-list"></ol>
+    </aside>
+    <div id="stops" class="stops"></div>
+  </div>
+
+  <section id="diff" class="diff-section"></section>
+  <section id="results" class="results-section"></section>
+  <section id="links" class="links-section"></section>
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <p id="footer-note"></p>
+  </div>
+</footer>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
