@@ -9,6 +9,8 @@ and only then lowered to `arith`/`scf`/`math` and on to LLVM IR. The result is a
 branch-minimal validator specialized to one schema, rather than a generic
 interpreter walking a rule tree at runtime.
 
+![JSON Schema MLIR compiler overview](json-schema-mlir-overview.png)
+
 ---
 
 ## Pipeline
