@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="700" viewBox="0 0 1600 700" role="img" aria-labelledby="title description">
+  <title id="title">JSON Schema MLIR Compiler overview</title>
+  <desc id="description">A pipeline from JSON Schema through a custom MLIR dialect, canonicalization, standard dialect lowering, and LLVM IR to a native validator, with compiler concepts and runtime ABI.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#495057"/>
+    </marker>
+    <style>
+      .title { font: 700 30px sans-serif; fill: #1e1e1e; }
+      .subtitle { font: 16px sans-serif; fill: #5f6368; }
+      .box-title { font: 700 18px sans-serif; }
+      .body { font: 16px sans-serif; }
+      .small { font: 15px monospace; }
+      .box { stroke-width: 2.5; }
+      .arrow { stroke: #495057; stroke-width: 2.5; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1600" height="700" fill="#ffffff"/>
+  <text x="800" y="42" text-anchor="middle" class="title">JSON Schema MLIR Compiler</text>
+  <text x="800" y="72" text-anchor="middle" class="subtitle">Compile one JSON Schema into a specialized native validator</text>
+
+  <rect x="25" y="145" width="220" height="150" rx="26" fill="#d0ebff" stroke="#1971c2" class="box"/>
+  <text x="135" y="190" text-anchor="middle" class="box-title" fill="#1864ab">JSON Schema</text>
+  <text x="135" y="218" text-anchor="middle" class="body" fill="#1864ab">Draft 2020-12</text>
+  <text x="135" y="246" text-anchor="middle" class="body" fill="#1864ab">constraints</text>
+
+  <rect x="330" y="130" width="260" height="180" rx="26" fill="#d3f9d8" stroke="#2f9e44" class="box"/>
+  <text x="460" y="164" text-anchor="middle" class="box-title" fill="#237032">schema dialect</text>
+  <text x="460" y="205" text-anchor="middle" class="body" fill="#237032">validate_string</text>
+  <text x="460" y="232" text-anchor="middle" class="body" fill="#237032">validate_number</text>
+  <text x="460" y="259" text-anchor="middle" class="body" fill="#237032">struct</text>
+  <text x="460" y="286" text-anchor="middle" class="small" fill="#237032">!schema.value</text>
+
+  <rect x="675" y="130" width="260" height="180" rx="26" fill="#fff3bf" stroke="#e67700" class="box"/>
+  <text x="805" y="164" text-anchor="middle" class="box-title" fill="#a15800">schema-canonicalize</text>
+  <text x="805" y="205" text-anchor="middle" class="body" fill="#a15800">subsumption</text>
+  <text x="805" y="232" text-anchor="middle" class="body" fill="#a15800">fusion</text>
+  <text x="805" y="259" text-anchor="middle" class="body" fill="#a15800">contradiction checks</text>
+  <text x="805" y="286" text-anchor="middle" class="body" fill="#a15800">vacuous constraints</text>
+
+  <rect x="1020" y="130" width="280" height="180" rx="26" fill="#f3d9fa" stroke="#9c36b5" class="box"/>
+  <text x="1160" y="164" text-anchor="middle" class="box-title" fill="#862e9c">lower-schema-to-std</text>
+  <text x="1160" y="205" text-anchor="middle" class="body" fill="#862e9c">scf.if type guards</text>
+  <text x="1160" y="232" text-anchor="middle" class="body" fill="#862e9c">arith comparisons</text>
+  <text x="1160" y="259" text-anchor="middle" class="body" fill="#862e9c">math operations</text>
+  <text x="1160" y="286" text-anchor="middle" class="body" fill="#862e9c">func runtime calls</text>
+
+  <rect x="1385" y="130" width="190" height="180" rx="26" fill="#ffe3e3" stroke="#c92a2a" class="box"/>
+  <text x="1480" y="180" text-anchor="middle" class="box-title" fill="#a61e1e">LLVM dialect</text>
+  <text x="1480" y="220" text-anchor="middle" class="body" fill="#a61e1e">mlir-translate</text>
+  <text x="1480" y="247" text-anchor="middle" class="body" fill="#a61e1e">LLVM IR</text>
+  <text x="1480" y="274" text-anchor="middle" class="body" fill="#a61e1e">native binary</text>
+
+  <line x1="245" y1="220" x2="330" y2="220" class="arrow"/>
+  <line x1="590" y1="220" x2="675" y2="220" class="arrow"/>
+  <line x1="935" y1="220" x2="1020" y2="220" class="arrow"/>
+  <line x1="1300" y1="220" x2="1385" y2="220" class="arrow"/>
+
+  <rect x="70" y="410" width="650" height="230" rx="26" fill="#edf2ff" stroke="#364fc7" class="box"/>
+  <text x="105" y="450" class="box-title" fill="#273c9b">Compiler concepts demonstrated</text>
+  <text x="105" y="493" class="body" fill="#273c9b">SSA values and dataflow</text>
+  <text x="105" y="522" class="body" fill="#273c9b">Custom MLIR dialect and types</text>
+  <text x="105" y="551" class="body" fill="#273c9b">Verifiers and canonicalization</text>
+  <text x="105" y="580" class="body" fill="#273c9b">Dialect conversion and lowering</text>
+  <text x="105" y="609" class="body" fill="#273c9b">Runtime ABI and opaque handles</text>
+
+  <rect x="820" y="410" width="710" height="230" rx="26" fill="#e3fafc" stroke="#0c8599" class="box"/>
+  <text x="855" y="450" class="box-title" fill="#0b7285">Runtime ABI</text>
+  <text x="855" y="493" class="small" fill="#0b7285">__schema_rt_kind      -&gt; JSON type tag</text>
+  <text x="855" y="522" class="small" fill="#0b7285">__schema_rt_as_f64    -&gt; numeric projection</text>
+  <text x="855" y="551" class="small" fill="#0b7285">__schema_rt_str_len   -&gt; string length</text>
+  <text x="855" y="580" class="small" fill="#0b7285">__schema_rt_has_field -&gt; object lookup</text>
+  <text x="855" y="617" class="body" fill="#0b7285">String literals are interned in schema.string_pool</text>
+</svg>
