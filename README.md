@@ -89,9 +89,35 @@ opaque `i64` document handle; string literals are interned into the module-level
 
 ## Building
 
-Requires **CMake ≥ 3.20**, **Ninja**, a **C++20** compiler, and an LLVM/MLIR
-install (19 or newer) built with `-DLLVM_INSTALL_UTILS=ON` so that `FileCheck`
-and `llvm-lit` are available.
+### Prerequisites
+
+The verified macOS setup uses the following direct dependencies:
+
+| Dependency | Verified version | Purpose |
+| ---------- | ---------------- | ------- |
+| CMake | 4.4.3 | Configure and build the project |
+| Ninja | 1.13.2 | CMake build generator |
+| Apple Clang or Homebrew Clang | 21.0.0 / 23.1.1 | C++20 compiler |
+| LLVM/MLIR | 23.1.1 | MLIR libraries, headers, TableGen, and `FileCheck` |
+| Python | 3.11.7 | Runs the standalone `lit` test runner |
+| `lit` | required on `PATH` | Runs the MLIR regression tests |
+
+Install the Homebrew dependencies on macOS with:
+
+```bash
+brew install cmake ninja llvm
+python3 -m pip install --user lit
+```
+
+Homebrew's LLVM is keg-only. Point the build at its CMake package directories:
+
+```bash
+export MLIR_INSTALL="$(brew --prefix llvm)"
+export PATH="${MLIR_INSTALL}/bin:${PATH}"
+```
+
+Alternatively, use an LLVM/MLIR 19 or newer installation built with
+`-DLLVM_INSTALL_UTILS=ON`, which provides `FileCheck` and `llvm-lit` together.
 
 ```bash
 # Point at the cmake package directories of your LLVM/MLIR install.
