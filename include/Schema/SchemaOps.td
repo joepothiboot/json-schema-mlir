@@ -1,9 +1,3 @@
-
----
-
-## 3. `include/Schema/SchemaOps.td`
-
-```tablegen
 //===- SchemaOps.td - JSON Schema dialect operations -------*- tablegen -*-===//
 #ifndef SCHEMA_OPS_TD
 #define SCHEMA_OPS_TD
@@ -40,7 +34,7 @@ def Schema_ValidateStringOp : Schema_Op<"validate_string", [Pure]> {
     OptionalAttr<StrAttr>:$format
   );
 
-  let results = (outs Schema_Verdict:$valid);
+  let results = (outs I1:$valid);
 
   // The `i1` result type is buildable, so ODS infers it and keeps the
   // printed form minimal.
@@ -88,7 +82,7 @@ def Schema_ValidateNumberOp : Schema_Op<"validate_number", [Pure]> {
     UnitAttr:$integral
   );
 
-  let results = (outs Schema_Verdict:$valid);
+  let results = (outs I1:$valid);
 
   let assemblyFormat = [{ $input attr-dict `:` type($input) }];
 
@@ -131,14 +125,14 @@ def Schema_StructOp : Schema_Op<"struct", [Pure]> {
 
   let arguments = (ins
     Schema_ValueType:$input,
-    Variadic<Schema_Verdict>:$field_results,
+    Variadic<I1>:$field_results,
     StrAttr:$type_name,
     StrArrayAttr:$field_names,
     OptionalAttr<StrArrayAttr>:$required_fields,
     UnitAttr:$additional_properties
   );
 
-  let results = (outs Schema_Verdict:$valid);
+  let results = (outs I1:$valid);
 
   let assemblyFormat = [{
     $input `as` $type_name

@@ -329,9 +329,7 @@ struct Conjunct {
 };
 
 Conjunct classify(Value value) {
-  Conjunct conjunct;
-  conjunct.value = value;
-  conjunct.loc = value.getLoc();
+  Conjunct conjunct{value, {}, value.getLoc()};
 
   if (auto strOp = value.getDefiningOp<ValidateStringOp>()) {
     conjunct.input = strOp.getInput();

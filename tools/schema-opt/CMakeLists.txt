@@ -7,6 +7,9 @@ set(LIBS
   ${conversion_libs}
   ${extension_libs}
   MLIRSchema
+  MLIRRegisterAllPasses
+  MLIRRegisterAllDialects
+  MLIRRegisterAllExtensions
   MLIROptLib
   MLIRParser
   MLIRSupport

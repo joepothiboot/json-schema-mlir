@@ -6,7 +6,7 @@ from lit.llvm.subst import FindTool, ToolSubst
 
 # -- Suite identity -----------------------------------------------------------
 config.name = "JSON-SCHEMA-MLIR"
-config.test_format = lit.formats.ShTest(not llvm_config.use_lit_shell)
+config.test_format = lit.formats.ShTest()
 
 # `--split-input-file` chunks are separated by `// -----`.
 config.suffixes = [".mlir"]

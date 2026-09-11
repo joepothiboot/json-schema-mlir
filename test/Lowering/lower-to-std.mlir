@@ -14,11 +14,11 @@
 //   CHECK-DAG:   %[[LO:.*]] = arith.constant 0.000000e+00 : f64
 //   CHECK-DAG:   %[[HI:.*]] = arith.constant 1.500000e+02 : f64
 //   CHECK-DAG:   %[[NUMTAG:.*]] = arith.constant 2 : i32
-//       CHECK:   %[[KIND:.*]] = func.call @__schema_rt_kind(%[[DOC]]) : (i64) -> i32
-//       CHECK:   %[[ISNUM:.*]] = arith.cmpi eq, %[[KIND]], %[[NUMTAG]] : i32
-//       CHECK:   %[[R:.*]] = scf.if %[[ISNUM]] -> (i1) {
-//       CHECK:     %[[X:.*]] = func.call @__schema_rt_as_f64(%[[DOC]]) : (i64) -> f64
-//       CHECK:     %[[GE:.*]] = arith.cmpf oge, %[[X]], %[[LO]] : f64
+//   CHECK-DAG:   %[[KIND:.*]] = call @__schema_rt_kind(%[[DOC]]) : (i64) -> i32
+//   CHECK-DAG:   %[[ISNUM:.*]] = arith.cmpi eq, %[[KIND]], %[[NUMTAG]] : i32
+//   CHECK-DAG:   %[[R:.*]] = scf.if %[[ISNUM]] -> (i1) {
+//   CHECK-DAG:     %[[X:.*]] = func.call @__schema_rt_as_f64(%[[DOC]]) : (i64) -> f64
+//   CHECK-DAG:     %[[GE:.*]] = arith.cmpf oge, %[[X]], %[[LO]] : f64
 //       CHECK:     %[[LE:.*]] = arith.cmpf ole, %[[X]], %[[HI]] : f64
 //       CHECK:     %[[AND:.*]] = arith.andi %[[GE]], %[[LE]] : i1
 //       CHECK:     scf.yield %[[AND]] : i1
