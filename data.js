@@ -2,8 +2,8 @@ window.TOUR = {
   meta: {
     project: "json-schema-mlir",
     tagline: "Compiling JSON Schema into native validators with a custom MLIR dialect",
-    repoUrl: "https://github.com/joepotibutr/json-schema-mlir",
-    readmeUrl: "https://github.com/joepotibutr/json-schema-mlir#readme",
+    repoUrl: "https://github.com/joepothiboot/json-schema-mlir",
+    readmeUrl: "https://github.com/joepothiboot/json-schema-mlir#readme",
     readingTime: "5 min read",
     accent: "#b3541e",
     sampleDataNotice: true
@@ -41,7 +41,7 @@ window.TOUR = {
       code: {
         lang: "json",
         filename: "examples/person.schema.json",
-        permalink: "https://github.com/joepotibutr/json-schema-mlir",
+        permalink: "https://github.com/joepothiboot/json-schema-mlir",
         startLine: 1,
         emphasize: [[7, 9]],
         text:
@@ -79,7 +79,7 @@ window.TOUR = {
       code: {
         lang: "tablegen",
         filename: "include/Schema/SchemaOps.td",
-        permalink: "https://github.com/joepotibutr/json-schema-mlir/blob/main/include/Schema/SchemaOps.td",
+        permalink: "https://github.com/joepothiboot/json-schema-mlir/blob/main/include/Schema/SchemaOps.td",
         startLine: 14,
         emphasize: [[14, 14], [28, 28]],
         text:
@@ -133,7 +133,7 @@ def Schema_StructOp : Schema_Op<"struct", [Pure]> {
       code: {
         lang: "mlir",
         filename: "test/Dialect/Schema/ops.mlir",
-        permalink: "https://github.com/joepotibutr/json-schema-mlir/blob/main/test/Dialect/Schema/ops.mlir",
+        permalink: "https://github.com/joepothiboot/json-schema-mlir/blob/main/test/Dialect/Schema/ops.mlir",
         startLine: 1,
         emphasize: [[3, 5]],
         text:
@@ -170,7 +170,7 @@ def Schema_StructOp : Schema_Op<"struct", [Pure]> {
       code: {
         lang: "cpp",
         filename: "lib/Schema/SchemaCanonicalizerPass.cpp",
-        permalink: "https://github.com/joepotibutr/json-schema-mlir/blob/main/lib/Schema/SchemaCanonicalizerPass.cpp",
+        permalink: "https://github.com/joepothiboot/json-schema-mlir/blob/main/lib/Schema/SchemaCanonicalizerPass.cpp",
         startLine: 96,
         emphasize: [[103, 107], [120, 124]],
         text:
@@ -226,7 +226,7 @@ def Schema_StructOp : Schema_Op<"struct", [Pure]> {
       code: {
         lang: "mlir",
         filename: "test/Lowering/lower-to-std.mlir",
-        permalink: "https://github.com/joepotibutr/json-schema-mlir/blob/main/test/Lowering/lower-to-std.mlir",
+        permalink: "https://github.com/joepothiboot/json-schema-mlir/blob/main/test/Lowering/lower-to-std.mlir",
         startLine: 1,
         emphasize: [[6, 7], [14, 16]],
         text:
@@ -324,11 +324,11 @@ func.func @validate_age(%doc: i64) -> i1 {
   },
 
   links: [
-    { label: "github.com/joepotibutr/json-schema-mlir", href: "https://github.com/joepotibutr/json-schema-mlir", note: "Full repository" },
-    { label: "README.md", href: "https://github.com/joepotibutr/json-schema-mlir#readme", note: "Build instructions, pass reference, runtime ABI" },
-    { label: "SchemaOps.td", href: "https://github.com/joepotibutr/json-schema-mlir/blob/main/include/Schema/SchemaOps.td", note: "ODS operation definitions" },
-    { label: "SchemaCanonicalizerPass.cpp", href: "https://github.com/joepotibutr/json-schema-mlir/blob/main/lib/Schema/SchemaCanonicalizerPass.cpp", note: "The constraint lattice" },
-    { label: "LowerToStandard.cpp", href: "https://github.com/joepotibutr/json-schema-mlir/blob/main/lib/Schema/LowerToStandard.cpp", note: "Dialect conversion to arith/scf/math" },
-    { label: "test/", href: "https://github.com/joepotibutr/json-schema-mlir/tree/main/test", note: "lit + FileCheck regression suite" }
+    { label: "github.com/joepothiboot/json-schema-mlir", href: "https://github.com/joepothiboot/json-schema-mlir", note: "Full repository" },
+    { label: "README.md", href: "https://github.com/joepothiboot/json-schema-mlir#readme", note: "Build instructions, pass reference, runtime ABI" },
+    { label: "SchemaOps.td", href: "https://github.com/joepothiboot/json-schema-mlir/blob/main/include/Schema/SchemaOps.td", note: "ODS operation definitions" },
+    { label: "SchemaCanonicalizerPass.cpp", href: "https://github.com/joepothiboot/json-schema-mlir/blob/main/lib/Schema/SchemaCanonicalizerPass.cpp", note: "The constraint lattice" },
+    { label: "LowerToStandard.cpp", href: "https://github.com/joepothiboot/json-schema-mlir/blob/main/lib/Schema/LowerToStandard.cpp", note: "Dialect conversion to arith/scf/math" },
+    { label: "test/", href: "https://github.com/joepothiboot/json-schema-mlir/tree/main/test", note: "lit + FileCheck regression suite" }
   ]
 };
