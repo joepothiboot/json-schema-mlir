@@ -93,14 +93,14 @@ opaque `i64` document handle; string literals are interned into the module-level
 
 The verified macOS setup uses the following direct dependencies:
 
-| Dependency | Verified version | Purpose |
-| ---------- | ---------------- | ------- |
-| CMake | 4.4.3 | Configure and build the project |
-| Ninja | 1.13.2 | CMake build generator |
-| Apple Clang or Homebrew Clang | 21.0.0 / 23.1.1 | C++20 compiler |
-| LLVM/MLIR | 23.1.1 | MLIR libraries, headers, TableGen, and `FileCheck` |
-| Python | 3.11.7 | Runs the standalone `lit` test runner |
-| `lit` | required on `PATH` | Runs the MLIR regression tests |
+| Dependency                    | Verified version   | Purpose                                            |
+| ----------------------------- | ------------------ | -------------------------------------------------- |
+| CMake                         | 4.4.3              | Configure and build the project                    |
+| Ninja                         | 1.13.2             | CMake build generator                              |
+| Apple Clang or Homebrew Clang | 21.0.0 / 23.1.1    | C++20 compiler                                     |
+| LLVM/MLIR                     | 23.1.1             | MLIR libraries, headers, TableGen, and `FileCheck` |
+| Python                        | 3.11.7             | Runs the standalone `lit` test runner              |
+| `lit`                         | required on `PATH` | Runs the MLIR regression tests                     |
 
 Install the Homebrew dependencies on macOS with:
 
