@@ -1,2 +1,4 @@
 # CMake/Ninja build output
 /build/
+# Pixi environment
+.pixi/

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Person",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "age": {
+      "allOf": [
+        { "type": "integer", "minimum": 0 },
+        { "type": "number", "exclusiveMaximum": 150 },
+        { "type": "number", "minimum": 18 }
+      ]
+    }
+  },
+  "required": ["name"]
+}

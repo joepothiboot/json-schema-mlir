@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased]
+
+### Added
+
+- Mojo library (`mojo/schema/`) with the canonicalizer's constraint lattices
+  and the lowered validation semantics, plus tests that check `meet` never
+  changes a verdict.
+- `examples/person/`: a JSON Schema, its `schema` dialect IR, and the
+  canonicalized output.
+- `pixi.toml` for the Mojo toolchain.
+
 ## [0.1.0] - 2026-09-07
 
 ### Added

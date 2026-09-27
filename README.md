@@ -197,7 +197,48 @@ lib/Schema/         Dialect registration, verifiers, canonicalizer, lowering
 tools/schema-opt/   mlir-opt-style driver
 test/Dialect/       Round-trip, verifier and canonicalization tests
 test/Lowering/      Dialect-conversion FileCheck tests
+mojo/schema/        Mojo constraint lattices + validators (same rules as the passes)
+mojo/tests/         Mojo tests, including a soundness check of `meet`
+examples/           JSON Schema documents with their `schema` dialect IR
+pixi.toml           Mojo toolchain + task runner
 ```
+
+---
+
+## Mojo library
+
+`mojo/schema/` implements the canonicalizer's constraint lattices as a Mojo
+library: `StringConstraints` and `NumberConstraints` with `subsumes`, `meet`
+and `validate`. The rules match `SchemaCanonicalizerPass.cpp` (exclusive
+bounds, `multipleOf` merging only when one divisor divides the other,
+undecided regex containment) and the validation semantics match what
+`--lower-schema-to-std` emits (ordered comparisons, so NaN fails any bound;
+lengths in code points).
+
+```mojo
+from schema import NumberConstraints
+
+var age = NumberConstraints.meet(
+    NumberConstraints().with_minimum(0).with_integral(),
+    NumberConstraints().with_minimum(18),
+).value()                        # minimum = 18, integral
+```
+
+The tests check the property the canonicalizer depends on: for a grid of
+constraint pairs and values (including NaN and infinity), whenever
+`meet(a, b)` exists it accepts exactly the values that both `a` and `b`
+accept.
+
+```bash
+pixi run test-mojo
+```
+
+`pattern` and `format` take part in `subsumes`/`meet`, but `validate` raises
+when either is set, since there is no regex engine here (the compiled
+validator calls into the runtime for them).
+
+See [`examples/person/`](examples/person/) for a schema taken through
+`--schema-canonicalize`, with the same fusion done by the Mojo library.
 
 ## License
 
