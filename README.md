@@ -1,4 +1,4 @@
-# json-schema-mlir
+# json-schema-mlir 📐
 
 An out-of-tree [MLIR](https://mlir.llvm.org) dialect that compiles **JSON Schema**
 (Draft 2020-12) documents into optimized native validators.
@@ -15,7 +15,7 @@ interpreter walking a rule tree at runtime.
 
 ---
 
-## Pipeline
+## 🛤️ Pipeline
 
 ```
   schema.json
@@ -52,7 +52,7 @@ interpreter walking a rule tree at runtime.
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Why an `scf.if`, not a flat conjunction
+### 💡 Why an `scf.if`, not a flat conjunction
 
 A JSON Schema type assertion applied to a value of the wrong type must evaluate to
 `false` — it must **not** execute the projection. Every lowered validator is
@@ -70,7 +70,7 @@ therefore guarded on the runtime type tag:
          }
 ```
 
-### Runtime ABI
+### 🔌 Runtime ABI
 
 The lowered module calls a small, side-effect-free shim. All entry points take an
 opaque `i64` document handle; string literals are interned into the module-level
@@ -87,9 +87,9 @@ opaque `i64` document handle; string literals are interned into the module-level
 
 ---
 
-## Building
+## 🔨 Building
 
-### Prerequisites
+### 📋 Prerequisites
 
 The verified macOS setup uses the following direct dependencies:
 
@@ -139,13 +139,13 @@ ninja -C build schema-opt
 re-exports `LLVM_DIR`, the TableGen executable path, and the include/library
 directories. Set `LLVM_DIR` explicitly only when the two live in separate prefixes.
 
-> **RTTI/EH.** Upstream LLVM defaults to `LLVM_ENABLE_RTTI=OFF`; `AddMLIR`
+> ⚠️ **RTTI/EH.** Upstream LLVM defaults to `LLVM_ENABLE_RTTI=OFF`; `AddMLIR`
 > propagates `-fno-rtti`, so the project uses `llvm::dyn_cast` / `TypeSwitch`
 > throughout and never `dynamic_cast`.
 
 ---
 
-## Testing
+## 🧪 Testing
 
 ```bash
 # Full regression suite (builds dependencies first).
@@ -178,7 +178,7 @@ Inspect a transformation by hand:
 
 ---
 
-## Pass reference
+## 🎛️ Pass reference
 
 | Flag                        | Scope            | Description                                                                       |
 | --------------------------- | ---------------- | --------------------------------------------------------------------------------- |
@@ -189,7 +189,7 @@ Inspect a transformation by hand:
 
 ---
 
-## Repository layout
+## 🗂️ Repository layout
 
 ```
 include/Schema/     ODS definitions (.td), public headers, pass interfaces
@@ -205,7 +205,7 @@ pixi.toml           Mojo toolchain + task runner
 
 ---
 
-## Mojo library
+## 🔥 Mojo library
 
 `mojo/schema/` implements the canonicalizer's constraint lattices as a Mojo
 library: `StringConstraints` and `NumberConstraints` with `subsumes`, `meet`
@@ -240,6 +240,6 @@ validator calls into the runtime for them).
 See [`examples/person/`](examples/person/) for a schema taken through
 `--schema-canonicalize`, with the same fusion done by the Mojo library.
 
-## License
+## 📜 License
 
 Apache-2.0 WITH LLVM-exception, matching upstream LLVM.
