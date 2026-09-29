@@ -1,5 +1,7 @@
 add_mlir_library(MLIRSchemaImport
+  AST.cpp
   Lexer.cpp
+  Parser.cpp
   Translation.cpp
 
   ADDITIONAL_HEADER_DIRS

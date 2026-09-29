@@ -14,6 +14,7 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
 
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -99,7 +100,9 @@ struct Token {
 /// runs to the end of the buffer.
 class Lexer {
 public:
-  explicit Lexer(const SourceFile &file);
+  /// With `allowComments`, `// ...` and `/* ... */` are skipped as whitespace
+  /// (as in JSONC). Otherwise a comment is an error.
+  explicit Lexer(const SourceFile &file, bool allowComments = false);
 
   /// Lexes the whole buffer. The last token is always `Eof`.
   std::vector<Token> tokenize();
@@ -111,6 +114,8 @@ private:
   Token lexString();
   Token lexNumber();
   Token lexWord();
+  /// Skips a comment; returns an error token if it is unterminated.
+  std::optional<Token> skipComment();
 
   Token makeToken(TokenKind kind, SourcePos begin);
   Token makeError(SourcePos begin, SourcePos at, const Twine &message);
@@ -123,6 +128,7 @@ private:
   const SourceFile &file;
   StringRef text;
   SourcePos pos;
+  bool allowComments;
   bool failed = false;
 };
 

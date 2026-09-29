@@ -86,7 +86,8 @@ StringRef mlir::schema::json::stringifyTokenKind(TokenKind kind) {
 // Lexer
 //===----------------------------------------------------------------------===//
 
-Lexer::Lexer(const SourceFile &file) : file(file), text(file.getText()) {
+Lexer::Lexer(const SourceFile &file, bool allowComments)
+    : file(file), text(file.getText()), allowComments(allowComments) {
   // A UTF-8 byte order mark is not part of the JSON text (RFC 8259 §8.1).
   if (text.starts_with("\xEF\xBB\xBF")) {
     pos.offset = 3;
@@ -141,6 +142,11 @@ Token Lexer::makeError(SourcePos begin, SourcePos at, const Twine &message) {
 
 Token Lexer::lexToken() {
   skipWhitespace();
+  while (allowComments && peek() == '/' && (peek(1) == '/' || peek(1) == '*')) {
+    if (std::optional<Token> error = skipComment())
+      return *error;
+    skipWhitespace();
+  }
   SourcePos begin = here();
   if (pos.offset >= text.size())
     return makeToken(TokenKind::Eof, begin);
@@ -168,8 +174,15 @@ Token Lexer::lexToken() {
   case '"':
     return lexString();
   case '/':
+    if (peek(1) == '/' || peek(1) == '*') {
+      if (std::optional<Token> error = skipComment())
+        return *error;
+      return makeError(begin, begin,
+                       "comments are not allowed in JSON (see "
+                       "--allow-comments)");
+    }
     advance();
-    return makeError(begin, begin, "comments are not allowed in JSON");
+    return makeError(begin, begin, "unexpected character '/'");
   default:
     break;
   }
@@ -186,6 +199,26 @@ Token Lexer::lexToken() {
   if (llvm::isPrint(c))
     return makeError(begin, begin, "unexpected character '" + Twine(c) + "'");
   return makeError(begin, begin, "unexpected byte in JSON text");
+}
+
+std::optional<Token> Lexer::skipComment() {
+  SourcePos begin = here();
+  advance();
+  if (peek() == '/') {
+    while (pos.offset < text.size() && peek() != '\n')
+      advance();
+    return std::nullopt;
+  }
+  advance(); // '*'
+  while (pos.offset < text.size()) {
+    if (peek() == '*' && peek(1) == '/') {
+      advance();
+      advance();
+      return std::nullopt;
+    }
+    advance();
+  }
+  return makeError(begin, begin, "unterminated block comment");
 }
 
 /// Appends `codePoint` to `out` as UTF-8.

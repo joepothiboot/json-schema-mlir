@@ -1,0 +1,126 @@
+// Syntax and keyword-shape errors are located diagnostics. The parser
+// recovers at the next ',', '}' or ']', so one run reports several errors.
+
+// RUN: schema-translate --import-json-schema --dump-ast --allow-comments %s --split-input-file -verify-diagnostics
+
+// Split chunks are named "within split at <file>:<line> offset"; line and
+// column are relative to the chunk.
+// RUN: not schema-translate --import-json-schema --dump-ast --allow-comments %s --split-input-file 2>&1 | FileCheck %s
+// CHECK: parse-errors.test:1 offset :{{[0-9]+}}:15: error: trailing comma is not allowed in JSON
+
+{
+  "minimum": 1,
+  // expected-error@+1 {{trailing comma is not allowed in JSON}}
+  "maximum": 2,
+}
+
+// -----
+
+{
+  // expected-error@+1 {{expected ':' after object key}}
+  "type" "string",
+  // Recovery: the next member is still parsed and checked.
+  // expected-error@+1 {{'minLength' must be a non-negative integer}}
+  "minLength": -1
+}
+
+// -----
+
+{
+  // expected-error@+1 {{expected ',' or '}' after object member}}
+  "type": "string" "minLength": 1
+}
+
+// -----
+
+// expected-note@+1 {{to match this '{'}}
+{
+  "type": "string",
+  // expected-error@+1 {{expected '}'}}
+  "properties": {}
+
+// -----
+
+{
+  "properties": {
+    "a": { "type": "string" },
+    // expected-error@+2 {{duplicate property 'a'}}
+    // expected-note@-2 {{first defined here}}
+    "a": { "type": "number" }
+  }
+}
+
+// -----
+
+{
+  "type": "number",
+  // expected-note@-1 {{first defined here}}
+  // expected-error@+1 {{duplicate key 'type'}}
+  "type": "string"
+}
+
+// -----
+
+{
+  // expected-error@+1 {{unknown type 'text'; expected one of null, boolean, object, array, number, string, integer}}
+  "type": "text"
+}
+
+// -----
+
+{
+  "type": "number",
+  // expected-error@+1 {{'exclusiveMaximum' must be a number in Draft 2020-12 (the boolean form is from Draft 4)}}
+  "exclusiveMaximum": true,
+  // expected-error@+1 {{'minimum' must be a number}}
+  "minimum": "0",
+  // expected-error@+1 {{'maxLength' must be a non-negative integer}}
+  "maxLength": 1.5,
+  // expected-error@+1 {{'pattern' must be a string}}
+  "pattern": 1,
+  // expected-error@+1 {{'required' must be an array of strings}}
+  "required": ["a", 2]
+}
+
+// -----
+
+{
+  // expected-error@+1 {{'required' lists 'a' more than once}}
+  "required": ["a", "a"]
+}
+
+// -----
+
+{
+  // expected-error@+1 {{'allOf' must contain at least one schema}}
+  "allOf": [],
+  // expected-error@+1 {{'type' must list at least one type}}
+  "type": []
+}
+
+// -----
+
+{
+  "properties": {
+    // expected-error@+1 {{boolean schemas are not supported; use an object schema}}
+    "a": true,
+    // expected-error@+1 {{expected a schema object}}
+    "b": 3
+  }
+}
+
+// -----
+
+// expected-error@+1 {{expected a schema object}}
+[1, 2]
+
+// -----
+
+{ "type": "string" }
+// expected-error@+1 {{unexpected content after the schema}}
+{ "type": "number" }
+
+// -----
+
+// expected-error@+1 {{number is out of range}}
+{ "minimum": 1e999 }

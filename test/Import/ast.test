@@ -1,0 +1,55 @@
+// --dump-ast prints one node per line: kind, pre-order id, source range
+// [line:col-line:col] (end column exclusive) and the parsed value.
+
+// RUN: split-file %s %t
+// RUN: schema-translate --import-json-schema --dump-ast %t/person.json | FileCheck %s
+// RUN: schema-translate --import-json-schema --dump-ast %t/misc.json | FileCheck %s --check-prefix=MISC
+
+// CHECK:      schema #0 [1:1-11:2]
+// CHECK-NEXT:   title #1 [2:3-2:20] "Person"
+// CHECK-NEXT:   type #2 [3:3-3:19] object
+// CHECK-NEXT:   properties #3 [4:3-9:4]
+// CHECK-NEXT:     property "name" #4 [5:5-5:49]
+// CHECK-NEXT:       schema #5 [5:13-5:49]
+// CHECK-NEXT:         type #6 [5:15-5:31] string
+// CHECK-NEXT:         maxLength #7 [5:33-5:47] 8
+// CHECK-NEXT:     property "age" #8 [6:5-8:6]
+// CHECK-NEXT:       schema #9 [6:12-8:6]
+// CHECK-NEXT:         allOf #10 [7:7-7:66]
+// CHECK-NEXT:           schema #11 [7:17-7:38]
+// CHECK-NEXT:             type #12 [7:19-7:36] integer
+// CHECK-NEXT:           schema #13 [7:40-7:65]
+// CHECK-NEXT:             exclusiveMinimum #14 [7:42-7:63] 0
+// CHECK-NEXT:   required #15 [10:3-10:30] ["name", "age"]
+// CHECK-NOT:  {{.}}
+
+// Type unions, lengths written as 2.0, escaped strings, annotations with
+// non-string values and unsupported keywords are all kept in the AST; the
+// importer decides what it can express.
+// MISC:      schema #0
+// MISC-NEXT:   type #1 {{.*}} [string, null]
+// MISC-NEXT:   minLength #2 {{.*}} 2
+// MISC-NEXT:   pattern #3 {{.*}} "^a\"b$"
+// MISC-NEXT:   default #4
+// MISC-NEXT:   oneOf #5 {{.*}} <unsupported>
+
+//--- person.json
+{
+  "title": "Person",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string", "maxLength": 8 },
+    "age": {
+      "allOf": [{ "type": "integer" }, { "exclusiveMinimum": 0 }]
+    }
+  },
+  "required": ["name", "age"]
+}
+//--- misc.json
+{
+  "type": ["string", "null"],
+  "minLength": 2.0,
+  "pattern": "^a\"b$",
+  "default": { "nested": [1, 2] },
+  "oneOf": [{ "type": "string" }]
+}

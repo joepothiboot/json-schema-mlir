@@ -1,52 +1,43 @@
-// Lexical errors are reported at the offending byte. The expected-error
-// markers live in "$comment" strings, the JSON Schema comment keyword.
+// Lexical errors are reported at the offending byte. JSON has no comment
+// syntax, so the inputs use --allow-comments to carry expected-error lines.
 
 // RUN: split-file %s %t
-// RUN: not schema-translate --import-json-schema --dump-tokens %t/unterminated.json -verify-diagnostics
-// RUN: not schema-translate --import-json-schema --dump-tokens %t/escape.json -verify-diagnostics
-// RUN: not schema-translate --import-json-schema --dump-tokens %t/numbers.json -verify-diagnostics
-// RUN: not schema-translate --import-json-schema --dump-tokens %t/literal.json -verify-diagnostics
-// RUN: not schema-translate --import-json-schema --dump-tokens %t/comment.json -verify-diagnostics
+// RUN: schema-translate --import-json-schema --dump-tokens --allow-comments %t/errors.json -verify-diagnostics
+// RUN: schema-translate --import-json-schema --dump-tokens %t/strict.json -verify-diagnostics
 // RUN: not schema-translate --import-json-schema --dump-tokens %t/unterminated.json 2>&1 | FileCheck %s --check-prefix=LOC
 
-// The diagnostic names file:line:col.
-// LOC: unterminated.json:3:12: error: unterminated string
+// Without -verify-diagnostics the error names file:line:col and exits 1.
+// LOC: unterminated.json:2:12: error: unterminated string
 
+//--- errors.json
+{
+  // expected-error@+1 {{unterminated string}}
+  "title": "Person
+  ,
+  // expected-error@+1 {{invalid escape sequence in string}}
+  "a": "\q",
+  // expected-error@+1 {{expected four hex digits after '\u'}}
+  "b": "\u12",
+  // expected-error@+1 {{unpaired high surrogate in '\u' escape}}
+  "c": "\ud800x",
+  // expected-error@+1 {{control character in string must be escaped}}
+  "d": "	",
+  // expected-error@+1 {{leading zeros are not allowed in JSON numbers}}
+  "e": 01,
+  // expected-error@+1 {{expected a digit after '.'}}
+  "f": 1.,
+  // expected-error@+1 {{expected a digit in the exponent}}
+  "g": 1e,
+  // expected-error@+1 {{expected a digit after '-'}}
+  "h": -x,
+  // expected-error@+1 {{invalid literal 'True'; expected 'true', 'false' or 'null'}}
+  "i": True,
+  // expected-error@+1 {{unexpected character '@'}}
+  "j": @
+}
+//--- strict.json
+{ "a": 1 } // expected-error {{comments are not allowed in JSON (see --allow-comments)}}
 //--- unterminated.json
 {
-  "$comment": "expected-error@+1 {{unterminated string}}",
   "title": "Person
-}
-//--- escape.json
-{
-  "$comment": "expected-error@+1 {{invalid escape sequence in string}}",
-  "a": "\q",
-  "$comment": "expected-error@+1 {{expected four hex digits after '\\u'}}",
-  "b": "\u12",
-  "$comment": "expected-error@+1 {{unpaired high surrogate in '\\u' escape}}",
-  "c": "\ud800x",
-  "$comment": "expected-error@+1 {{control character in string must be escaped}}",
-  "d": "	"
-}
-//--- numbers.json
-{
-  "$comment": "expected-error@+1 {{leading zeros are not allowed in JSON numbers}}",
-  "a": 01,
-  "$comment": "expected-error@+1 {{expected a digit after '.'}}",
-  "b": 1.,
-  "$comment": "expected-error@+1 {{expected a digit in the exponent}}",
-  "c": 1e,
-  "$comment": "expected-error@+1 {{expected a digit after '-'}}",
-  "d": -x
-}
-//--- literal.json
-{
-  "$comment": "expected-error@+1 {{invalid literal 'True'; expected 'true', 'false' or 'null'}}",
-  "a": True
-}
-//--- comment.json
-{
-  "$comment": "expected-error@+1 {{comments are not allowed in JSON}}",
-  // not JSON
-  "a": 1
 }

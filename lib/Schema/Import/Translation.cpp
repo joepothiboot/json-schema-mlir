@@ -7,7 +7,9 @@
 
 #include "Schema/Import/Translation.h"
 
+#include "Schema/Import/AST.h"
 #include "Schema/Import/Lexer.h"
+#include "Schema/Import/Parser.h"
 
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/Tools/mlir-translate/Translation.h"
@@ -24,6 +26,15 @@ static llvm::cl::opt<bool>
     dumpTokens("dump-tokens",
                llvm::cl::desc("Print the JSON token stream and stop"),
                llvm::cl::cat(importCategory));
+
+static llvm::cl::opt<bool> allowComments(
+    "allow-comments",
+    llvm::cl::desc("Accept // and /* */ comments in the JSON input (JSONC)"),
+    llvm::cl::cat(importCategory));
+
+static llvm::cl::opt<bool>
+    dumpAst("dump-ast", llvm::cl::desc("Print the schema AST and stop"),
+            llvm::cl::cat(importCategory));
 
 static void printTokens(ArrayRef<json::Token> tokens, raw_ostream &os) {
   for (const json::Token &token : tokens) {
@@ -45,15 +56,22 @@ static LogicalResult importJsonSchema(llvm::SourceMgr &sourceMgr,
   json::SourceFile file(context, buffer->getBufferIdentifier(),
                         buffer->getBuffer());
 
-  json::Lexer lexer(file);
+  json::Lexer lexer(file, allowComments);
   std::vector<json::Token> tokens = lexer.tokenize();
   if (dumpTokens) {
     printTokens(tokens, output);
     return failure(lexer.hadError());
   }
 
+  json::ParsedSchema parsed = json::parseSchema(file, tokens);
+  if (dumpAst) {
+    if (parsed.root)
+      json::dumpAst(*parsed.root, output);
+    return failure(lexer.hadError() || parsed.failed);
+  }
+
   return emitError(UnknownLoc::get(context),
-                   "only --dump-tokens is implemented so far");
+                   "only --dump-tokens and --dump-ast are implemented so far");
 }
 
 void mlir::schema::registerImportJsonSchemaTranslation() {
