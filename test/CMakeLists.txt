@@ -4,7 +4,7 @@ configure_lit_site_cfg(
   MAIN_CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/lit.cfg.py
 )
 
-set(SCHEMA_TEST_DEPENDS FileCheck count not schema-opt)
+set(SCHEMA_TEST_DEPENDS FileCheck count not schema-opt schema-translate)
 if(TARGET mlir-translate)
   list(APPEND SCHEMA_TEST_DEPENDS mlir-translate)
 endif()

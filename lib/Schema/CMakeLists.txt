@@ -24,3 +24,5 @@ add_mlir_dialect_library(MLIRSchema
   MLIRSCFTransforms
   MLIRSideEffectInterfaces
 )
+
+add_subdirectory(Import)

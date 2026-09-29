@@ -1,0 +1,37 @@
+// Every token carries line:col and its byte range [begin,end).
+
+// RUN: split-file %s %t
+// RUN: schema-translate --import-json-schema --dump-tokens %t/simple.json | FileCheck %s --check-prefix=SIMPLE
+// RUN: schema-translate --import-json-schema --dump-tokens %t/scalars.json | FileCheck %s --check-prefix=SCALARS
+
+// SIMPLE:      1:1 l_brace [0,1) {
+// SIMPLE-NEXT: 2:3 string [4,10) "type"
+// SIMPLE-NEXT: 2:9 colon [10,11) :
+// SIMPLE-NEXT: 2:11 string [12,20) "string"
+// SIMPLE-NEXT: 2:19 comma [20,21) ,
+// SIMPLE-NEXT: 3:3 string [24,35) "minLength"
+// SIMPLE-NEXT: 3:14 colon [35,36) :
+// SIMPLE-NEXT: 3:16 number [37,38) 1
+// SIMPLE-NEXT: 4:1 r_brace [39,40) }
+// SIMPLE-NEXT: 5:1 eof [41,41)
+
+// Literals, negative/fractional/exponent numbers and escapes keep their raw
+// spelling.
+// SCALARS:      1:1 l_square [0,1) [
+// SCALARS-NEXT: 1:2 true [1,5) true
+// SCALARS-NEXT: 1:6 comma [5,6) ,
+// SCALARS-NEXT: 1:8 false [7,12) false
+// SCALARS:      1:15 null [14,18) null
+// SCALARS:      1:21 number [20,28) -1.5e+10
+// SCALARS:      1:31 number [30,31) 0
+// SCALARS:      1:34 string [33,47) "a\"b\u00e9\n"
+// SCALARS-NEXT: 1:48 r_square [47,48) ]
+// SCALARS-NEXT: 2:1 eof [49,49)
+
+//--- simple.json
+{
+  "type": "string",
+  "minLength": 1
+}
+//--- scalars.json
+[true, false, null, -1.5e+10, 0, "a\"b\u00e9\n"]

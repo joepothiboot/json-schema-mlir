@@ -1,0 +1,52 @@
+// Lexical errors are reported at the offending byte. The expected-error
+// markers live in "$comment" strings, the JSON Schema comment keyword.
+
+// RUN: split-file %s %t
+// RUN: not schema-translate --import-json-schema --dump-tokens %t/unterminated.json -verify-diagnostics
+// RUN: not schema-translate --import-json-schema --dump-tokens %t/escape.json -verify-diagnostics
+// RUN: not schema-translate --import-json-schema --dump-tokens %t/numbers.json -verify-diagnostics
+// RUN: not schema-translate --import-json-schema --dump-tokens %t/literal.json -verify-diagnostics
+// RUN: not schema-translate --import-json-schema --dump-tokens %t/comment.json -verify-diagnostics
+// RUN: not schema-translate --import-json-schema --dump-tokens %t/unterminated.json 2>&1 | FileCheck %s --check-prefix=LOC
+
+// The diagnostic names file:line:col.
+// LOC: unterminated.json:3:12: error: unterminated string
+
+//--- unterminated.json
+{
+  "$comment": "expected-error@+1 {{unterminated string}}",
+  "title": "Person
+}
+//--- escape.json
+{
+  "$comment": "expected-error@+1 {{invalid escape sequence in string}}",
+  "a": "\q",
+  "$comment": "expected-error@+1 {{expected four hex digits after '\\u'}}",
+  "b": "\u12",
+  "$comment": "expected-error@+1 {{unpaired high surrogate in '\\u' escape}}",
+  "c": "\ud800x",
+  "$comment": "expected-error@+1 {{control character in string must be escaped}}",
+  "d": "	"
+}
+//--- numbers.json
+{
+  "$comment": "expected-error@+1 {{leading zeros are not allowed in JSON numbers}}",
+  "a": 01,
+  "$comment": "expected-error@+1 {{expected a digit after '.'}}",
+  "b": 1.,
+  "$comment": "expected-error@+1 {{expected a digit in the exponent}}",
+  "c": 1e,
+  "$comment": "expected-error@+1 {{expected a digit after '-'}}",
+  "d": -x
+}
+//--- literal.json
+{
+  "$comment": "expected-error@+1 {{invalid literal 'True'; expected 'true', 'false' or 'null'}}",
+  "a": True
+}
+//--- comment.json
+{
+  "$comment": "expected-error@+1 {{comments are not allowed in JSON}}",
+  // not JSON
+  "a": 1
+}
