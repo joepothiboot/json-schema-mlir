@@ -1,0 +1,117 @@
+// The importer emits one op per assertion keyword, located at that keyword,
+// and joins a schema's conjuncts with arith.andi located at the schema.
+
+// RUN: split-file --no-leading-lines %s %t
+// RUN: schema-translate --import-json-schema --mlir-print-debuginfo --mlir-print-local-scope %t/string.json | FileCheck %s --check-prefix=STRING
+// RUN: schema-translate --import-json-schema --mlir-print-debuginfo --mlir-print-local-scope %t/number.json | FileCheck %s --check-prefix=NUMBER
+// RUN: schema-translate --import-json-schema %t/nested.json | FileCheck %s --check-prefix=NESTED
+// RUN: schema-translate --import-json-schema %t/allof.json | FileCheck %s --check-prefix=ALLOF
+// RUN: schema-translate --import-json-schema %t/shared.json | FileCheck %s --check-prefix=SHARED
+// RUN: schema-translate --import-json-schema %t/empty.json | FileCheck %s --check-prefix=EMPTY
+
+// No title: the function is named after the file.
+// STRING-LABEL: func.func @validate_string(
+// STRING-SAME:      %[[DOC:.*]]: !schema.value loc("{{.*}}string.json":1:1)) -> i1 {
+// STRING:         %[[T:.*]] = schema.validate_string %[[DOC]] : !schema.value loc("{{.*}}string.json":2:3)
+// STRING:         %[[MIN:.*]] = schema.validate_string %[[DOC]] {min_length = 1 : i64} : !schema.value loc("{{.*}}string.json":3:3)
+// STRING:         %[[MAX:.*]] = schema.validate_string %[[DOC]] {max_length = 8 : i64} : !schema.value loc("{{.*}}string.json":4:3)
+// STRING:         %[[PAT:.*]] = schema.validate_string %[[DOC]] {pattern = "^[a-z]+$"} : !schema.value loc("{{.*}}string.json":5:3)
+// STRING:         %[[FMT:.*]] = schema.validate_string %[[DOC]] {format = "hostname"} : !schema.value loc("{{.*}}string.json":6:3)
+// STRING:         %[[A:.*]] = arith.andi %[[T]], %[[MIN]] : i1 loc("{{.*}}string.json":1:1)
+// STRING:         arith.andi %[[A]], %[[MAX]]
+// STRING:         return %{{.*}} : i1 loc("{{.*}}string.json":1:1)
+
+// NUMBER-LABEL: func.func @validate_price(
+// NUMBER:         schema.validate_number %{{.*}} {integral} : !schema.value loc("{{.*}}number.json":3:3)
+// NUMBER:         schema.validate_number %{{.*}} {exclusive_minimum, minimum = 0.000000e+00 : f64} : !schema.value loc("{{.*}}number.json":4:3)
+// NUMBER:         schema.validate_number %{{.*}} {maximum = 1.000000e+06 : f64} : !schema.value loc("{{.*}}number.json":5:3)
+// NUMBER:         schema.validate_number %{{.*}} {multiple_of = 5.000000e+00 : f64} : !schema.value loc("{{.*}}number.json":6:3)
+
+// One argument per property path, depth-first in declaration order; nested
+// objects become nested schema.struct ops, named by title or property name.
+// NESTED-LABEL: func.func @validate_order(
+// NESTED-SAME:      %[[DOC:[^:]*]]: !schema.value, %[[ID:[^:]*]]: !schema.value, %[[SHIP:[^:]*]]: !schema.value, %[[CITY:[^:]*]]: !schema.value, %[[ZIP:[^:]*]]: !schema.value) -> i1
+// NESTED:         %[[IDOK:.*]] = schema.validate_number %[[ID]] {integral}
+// NESTED:         %[[CITYOK:.*]] = schema.validate_string %[[CITY]] :
+// NESTED:         %[[ZIPT:.*]] = schema.validate_string %[[ZIP]] :
+// NESTED:         %[[ZIPP:.*]] = schema.validate_string %[[ZIP]] {pattern = "^[0-9]{5}$"}
+// NESTED:         %[[ZIPOK:.*]] = arith.andi %[[ZIPT]], %[[ZIPP]]
+// NESTED:         %[[ADDR:.*]] = schema.struct %[[SHIP]] as "Address" fields ["city", "zip"] required ["city", "zip"] validators(%[[CITYOK]], %[[ZIPOK]])
+// NESTED:         %[[ORDER:.*]] = schema.struct %[[DOC]] as "Order" fields ["id", "ship_to"] required ["id"] validators(%[[IDOK]], %[[ADDR]])
+// NESTED:         return %[[ORDER]] : i1
+
+// A type from any allOf branch covers the whole conjunction, so the second
+// branch's `minimum` is a number check.
+// ALLOF-LABEL: func.func @validate_allof(%arg0: !schema.value) -> i1
+// ALLOF-NEXT:    %[[NUM:.*]] = schema.validate_number %arg0 : !schema.value
+// ALLOF-NEXT:    %[[MIN:.*]] = schema.validate_number %arg0 {minimum = 0.000000e+00 : f64}
+// ALLOF-NEXT:    %[[AND:.*]] = arith.andi %[[NUM]], %[[MIN]] : i1
+// ALLOF-NEXT:    return %[[AND]] : i1
+
+// A property declared in two allOf branches maps to one argument.
+// SHARED-LABEL: func.func @validate_wrapper(%arg0: !schema.value, %arg1: !schema.value) -> i1
+// SHARED:         schema.struct %arg0 as "Wrapper" fields [] validators()
+// SHARED:         %[[A:.*]] = schema.validate_string %arg1 :
+// SHARED:         schema.struct %arg0 as "Wrapper" fields ["x"] validators(%[[A]])
+// SHARED:         schema.validate_string %arg1 {min_length = 1 : i64}
+// SHARED:         schema.struct %arg0 as "Wrapper" fields ["x"] validators
+
+// An empty schema accepts everything; an object without properties is an
+// empty struct.
+// EMPTY-LABEL: func.func @validate_anything(%arg0: !schema.value, %arg1: !schema.value) -> i1
+// EMPTY:         %[[TRUE:.*]] = arith.constant true
+// EMPTY:         schema.struct %arg0 as "Anything" fields ["x"] validators(%[[TRUE]])
+
+//--- string.json
+{
+  "type": "string",
+  "minLength": 1,
+  "maxLength": 8,
+  "pattern": "^[a-z]+$",
+  "format": "hostname"
+}
+//--- number.json
+{
+  "title": "Price",
+  "type": "integer",
+  "exclusiveMinimum": 0,
+  "maximum": 1e6,
+  "multipleOf": 5
+}
+//--- nested.json
+{
+  "title": "Order",
+  "type": "object",
+  "properties": {
+    "id": { "type": "integer" },
+    "ship_to": {
+      "title": "Address",
+      "type": "object",
+      "properties": {
+        "city": { "type": "string" },
+        "zip": { "type": "string", "pattern": "^[0-9]{5}$" }
+      },
+      "required": ["city", "zip"]
+    }
+  },
+  "required": ["id"]
+}
+//--- allof.json
+{
+  "allOf": [{ "type": "number" }, { "minimum": 0 }]
+}
+//--- shared.json
+{
+  "title": "Wrapper",
+  "type": "object",
+  "allOf": [
+    { "properties": { "x": { "type": "string" } } },
+    { "properties": { "x": { "type": "string", "minLength": 1 } } }
+  ]
+}
+//--- empty.json
+{
+  "title": "Anything",
+  "type": "object",
+  "properties": { "x": {} }
+}

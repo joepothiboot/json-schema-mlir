@@ -1,5 +1,6 @@
 add_mlir_library(MLIRSchemaImport
   AST.cpp
+  Importer.cpp
   Lexer.cpp
   Parser.cpp
   Translation.cpp
@@ -9,6 +10,8 @@ add_mlir_library(MLIRSchemaImport
 
   LINK_LIBS PUBLIC
   MLIRSchema
+  MLIRArithDialect
+  MLIRFuncDialect
   MLIRIR
   MLIRSupport
   MLIRTranslateLib

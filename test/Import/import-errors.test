@@ -1,0 +1,140 @@
+// Semantic errors are reported at the JSON keyword responsible, through
+// mlir::emitError on its FileLineColLoc.
+
+// RUN: schema-translate --import-json-schema --allow-comments %s --split-input-file -verify-diagnostics
+
+{
+  "type": "number",
+  // expected-error@+1 {{no number satisfies both 'minimum' (5) and 'maximum' (3)}}
+  "minimum": 5,
+  // expected-note@+1 {{'maximum' is here}}
+  "maximum": 3
+}
+
+// -----
+
+{
+  "type": "number",
+  // expected-error@+1 {{no number satisfies both 'exclusiveMinimum' (3) and 'maximum' (3)}}
+  "exclusiveMinimum": 3,
+  // expected-note@+1 {{'maximum' is here}}
+  "maximum": 3
+}
+
+// -----
+
+{
+  "type": "string",
+  // expected-error@+1 {{no string satisfies both 'minLength' (5) and 'maxLength' (2)}}
+  "minLength": 5,
+  // expected-note@+1 {{'maxLength' is here}}
+  "maxLength": 2
+}
+
+// -----
+
+{
+  "type": "number",
+  // expected-error@+1 {{'multipleOf' must be greater than 0, got 0}}
+  "multipleOf": 0
+}
+
+// -----
+
+{
+  "type": "object",
+  // expected-note@+1 {{'properties' is here}}
+  "properties": { "name": { "type": "string" } },
+  // expected-error@+1 {{required property 'email' is not declared in 'properties'}}
+  "required": ["name", "email"]
+}
+
+// -----
+
+{
+  "type": "object",
+  "properties": {
+    // expected-error@+1 {{'minimum' requires "type": "number" or "integer" on this schema or in an 'allOf' with it}}
+    "age": { "minimum": 0 }
+  }
+}
+
+// -----
+
+{
+  // expected-error@+1 {{'properties' requires "type": "object" on this schema or in an 'allOf' with it}}
+  "properties": {}
+}
+
+// -----
+
+{
+  "type": "integer",
+  // expected-warning@+1 {{'minLength' has no effect: this schema only accepts integers}}
+  "minLength": 1
+}
+
+// -----
+
+{
+  // expected-note@+1 {{'string' is required here}}
+  "type": "string",
+  // expected-error@+1 {{type 'number' contradicts type 'string'; no value satisfies both}}
+  "allOf": [{ "type": "number" }]
+}
+
+// -----
+
+{
+  // expected-error@+1 {{type unions are not supported; 'type' must name exactly one type}}
+  "type": ["string", "null"]
+}
+
+// -----
+
+{
+  // expected-error@+1 {{type 'array' is not supported by the schema dialect}}
+  "type": "array"
+}
+
+// -----
+
+{
+  "type": "string",
+  // expected-error@+1 {{keyword 'oneOf' is not supported by the schema front end}}
+  "oneOf": [{ "minLength": 1 }]
+}
+
+// -----
+
+{
+  // expected-error@+1 {{unsupported '$schema' 'http://json-schema.org/draft-07/schema#'; only Draft 2020-12 is supported}}
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "string"
+}
+
+// -----
+
+{
+  "type": "string",
+  // expected-error@+1 {{'pattern' is not a valid regular expression}}
+  "pattern": "(unclosed"
+}
+
+// -----
+
+{
+  "type": "string",
+  // expected-error@+1 {{'format' must not be empty}}
+  "format": ""
+}
+
+// -----
+
+{
+  "type": "object",
+  "properties": {
+    // expected-error@+1 {{empty property names are not supported}}
+    "": { "type": "string" }
+  }
+}

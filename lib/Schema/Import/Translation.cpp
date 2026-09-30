@@ -8,6 +8,7 @@
 #include "Schema/Import/Translation.h"
 
 #include "Schema/Import/AST.h"
+#include "Schema/Import/Importer.h"
 #include "Schema/Import/Lexer.h"
 #include "Schema/Import/Parser.h"
 
@@ -70,8 +71,14 @@ static LogicalResult importJsonSchema(llvm::SourceMgr &sourceMgr,
     return failure(lexer.hadError() || parsed.failed);
   }
 
-  return emitError(UnknownLoc::get(context),
-                   "only --dump-tokens and --dump-ast are implemented so far");
+  if (lexer.hadError() || parsed.failed || !parsed.root)
+    return failure();
+
+  OwningOpRef<ModuleOp> module = importSchema(*parsed.root, file);
+  if (!module)
+    return failure();
+  module->print(output);
+  return success();
 }
 
 void mlir::schema::registerImportJsonSchemaTranslation() {
