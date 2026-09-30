@@ -1,0 +1,104 @@
+// --emit-trace writes tokens, AST, diagnostics and the IR of each stage, all
+// tied to source ranges (format: docs/trace-format.md).
+
+// RUN: split-file --no-leading-lines %s %t
+// RUN: schema-translate --import-json-schema %t/fuse.json --emit-trace=%t/fuse.trace.json | FileCheck %s --check-prefix=OUT
+// RUN: FileCheck %s --input-file=%t/fuse.trace.json
+// RUN: not schema-translate --import-json-schema %t/bad.json --emit-trace=%t/bad.trace.json
+// RUN: FileCheck %s --input-file=%t/bad.trace.json --check-prefix=BAD
+
+// The tool's own output stays the imported (not canonicalized) IR.
+// OUT: arith.andi
+
+// CHECK:      "format": "json-schema-mlir-trace",
+// CHECK-NEXT: "version": 1,
+// CHECK-NEXT: "source": {
+// CHECK-NEXT:   "file": "{{.*}}fuse.json",
+// CHECK-NEXT:   "text": "{\n  \"type\": \"integer\",\n  \"allOf\": [{ \"minimum\": 0 }, { \"minimum\": 5 }]\n}\n"
+
+// CHECK:      "tokens": [
+// CHECK-NEXT:   {
+// CHECK-NEXT:     "kind": "l_brace",
+// CHECK-NEXT:     "text": "{",
+// CHECK-NEXT:     "range": {
+// CHECK-NEXT:       "begin": {
+// CHECK-NEXT:         "offset": 0,
+// CHECK-NEXT:         "line": 1,
+// CHECK-NEXT:         "column": 1
+
+// Pre-order ids: 0 root, 1 type, 2 allOf, 3 and 5 branches, 4 and 6 minimum.
+// CHECK:      "ast": {
+// CHECK-NEXT:   "id": 0,
+// CHECK-NEXT:   "kind": "schema",
+// CHECK:          "id": 1,
+// CHECK-NEXT:     "kind": "keyword",
+// CHECK-NEXT:     "keyword": "type",
+// CHECK-NEXT:     "category": "type",
+// CHECK:          "value": [
+// CHECK-NEXT:       "integer"
+// CHECK:          "id": 6,
+// CHECK-NEXT:     "kind": "keyword",
+// CHECK-NEXT:     "keyword": "minimum",
+// CHECK-NEXT:     "category": "number",
+// CHECK:          "value": 5,
+// CHECK-NEXT:     "spelling": "5",
+
+// CHECK:      "diagnostics": [],
+
+// CHECK:      "name": "import",
+// CHECK:        "name": "schema.validate_number",
+// CHECK-NEXT:   "parent": 1,
+// CHECK-NEXT:   "irPos": {
+// CHECK-NEXT:     "line": 3,
+// CHECK-NEXT:     "column": 5
+// CHECK-NEXT:   },
+// CHECK-NEXT:   "astNodes": [
+// CHECK-NEXT:     1
+// CHECK-NEXT:   ],
+
+// After canonicalization one op carries all three keywords' nodes and ranges.
+// CHECK:      "name": "schema-canonicalize",
+// CHECK-NEXT: "ir": "module {\n  func.func @validate_fuse(%arg0: !schema.value) -> i1 {\n    %0 = schema.validate_number %arg0 {integral, minimum = 5.000000e+00 : f64} : !schema.value\n    return %0 : i1\n  }\n}\n",
+// CHECK:        "name": "schema.validate_number",
+// CHECK:        "astNodes": [
+// CHECK-NEXT:     1,
+// CHECK-NEXT:     4,
+// CHECK-NEXT:     6
+// CHECK-NEXT:   ],
+// CHECK-NEXT:   "ranges": [
+// CHECK-NEXT:     {
+// CHECK-NEXT:       "begin": {
+// CHECK-NEXT:         "offset": 4,
+// CHECK-NEXT:         "line": 2,
+// CHECK-NEXT:         "column": 3
+
+// A failed import still writes the tokens, the AST and the diagnostics (with
+// notes), and no stages.
+// BAD:      "ast": {
+// BAD-NEXT:   "id": 0,
+// BAD:      "diagnostics": [
+// BAD-NEXT:   {
+// BAD-NEXT:     "severity": "error",
+// BAD-NEXT:     "message": "no number satisfies both 'minimum' (5) and 'maximum' (3)",
+// BAD-NEXT:     "range": {
+// BAD-NEXT:       "begin": {
+// BAD-NEXT:         "offset": 24,
+// BAD-NEXT:         "line": 3,
+// BAD-NEXT:         "column": 3
+// BAD:          "notes": [
+// BAD-NEXT:       {
+// BAD-NEXT:         "severity": "note",
+// BAD-NEXT:         "message": "'maximum' is here",
+// BAD:      "stages": []
+
+//--- fuse.json
+{
+  "type": "integer",
+  "allOf": [{ "minimum": 0 }, { "minimum": 5 }]
+}
+//--- bad.json
+{
+  "type": "number",
+  "minimum": 5,
+  "maximum": 3
+}

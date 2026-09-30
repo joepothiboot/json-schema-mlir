@@ -3,6 +3,7 @@ add_mlir_library(MLIRSchemaImport
   Importer.cpp
   Lexer.cpp
   Parser.cpp
+  Trace.cpp
   Translation.cpp
 
   ADDITIONAL_HEADER_DIRS
@@ -12,6 +13,7 @@ add_mlir_library(MLIRSchemaImport
   MLIRSchema
   MLIRArithDialect
   MLIRFuncDialect
+  MLIRPass
   MLIRIR
   MLIRSupport
   MLIRTranslateLib
