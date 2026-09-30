@@ -19,7 +19,10 @@ interpreter walking a rule tree at runtime.
 
 ```
   schema.json
-      │  front end (schema -> IR)
+      │  schema-translate --import-json-schema
+      │    · lexer     -> tokens            (--dump-tokens)
+      │    · parser    -> schema AST        (--dump-ast)
+      │    · importer  -> one op per keyword, located at the keyword
       ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │  schema dialect                                                 │
@@ -84,6 +87,81 @@ opaque `i64` document handle; string literals are interned into the module-level
 | `__schema_rt_str_matches` | `(i64, i64) -> i1` | Regex match by pool index             |
 | `__schema_rt_str_format`  | `(i64, i64) -> i1` | `format` assertion by pool index      |
 | `__schema_rt_has_field`   | `(i64, i64) -> i1` | Object member presence                |
+
+---
+
+## 🧩 Front end
+
+`schema-translate` imports a JSON Schema document into the `schema` dialect.
+It is a separate tool from `schema-opt` because, as with
+`mlir-translate --import-llvm`, its input is not MLIR:
+
+```bash
+build/bin/schema-translate --import-json-schema examples/person/person.schema.json |
+  build/bin/schema-opt --schema-canonicalize
+```
+
+The front end runs in three stages, each of which can be printed on its own:
+
+| Stage    | Output                                                          | Flag            |
+| -------- | --------------------------------------------------------------- | --------------- |
+| Lexer    | Tokens with `line:col` and byte ranges (hand-written, RFC 8259) | `--dump-tokens` |
+| Parser   | Schema AST, one node per schema, property and keyword           | `--dump-ast`    |
+| Importer | `func.func @validate_<title>` in the `schema` dialect           | (default)       |
+
+`--emit-trace=<file.json>` also writes the tokens, the AST, the diagnostics,
+and the IR before and after `--schema-canonicalize`, all tied to source
+ranges, for an external viewer. The format is specified in
+[`docs/trace-format.md`](docs/trace-format.md).
+
+### 📑 Supported keywords
+
+The subset of Draft 2020-12 the dialect can express:
+
+| Keyword                                                       | IR                                                       |
+| ------------------------------------------------------------- | -------------------------------------------------------- |
+| `type`: `string`                                              | `schema.validate_string` (type guard only)               |
+| `type`: `number` / `integer`                                  | `schema.validate_number` / `… {integral}`                |
+| `type`: `object`, `properties`, `required`                    | `schema.struct`, one validator operand per property      |
+| `minimum`, `maximum`                                          | `schema.validate_number {minimum}` / `{maximum}`         |
+| `exclusiveMinimum`, `exclusiveMaximum`                        | The same, plus `exclusive_minimum` / `exclusive_maximum` |
+| `multipleOf`                                                  | `schema.validate_number {multiple_of}`                   |
+| `minLength`, `maxLength`                                      | `schema.validate_string {min_length}` / `{max_length}`   |
+| `pattern`, `format`                                           | `schema.validate_string {pattern}` / `{format}`          |
+| `allOf`                                                       | `arith.andi` of the branches                             |
+| Annotations: `title`, `description`, `$comment`, `$schema`, … | Ignored; `title` names the function and struct           |
+
+Anything else (`oneOf`, `items`, `enum`, `$ref`, type unions, boolean
+schemas, the `array`/`boolean`/`null` types, drafts other than 2020-12) is a
+located error rather than a silent approximation.
+
+How the importer builds the IR:
+
+- **One op per keyword.** Each op's location is the `FileLineColLoc` of its
+  keyword, and a schema's conjuncts are joined with `arith.andi` located at
+  the schema. `--schema-canonicalize` then fuses them and keeps every
+  keyword's location in a `FusedLoc`.
+- **Types come from the conjunction.** The dialect's validators check the
+  JSON type as well as the constraint, so a keyword such as `minimum` needs a
+  `type` on its own schema or on another branch of the same `allOf`.
+  A keyword for another type (`minLength` on an integer) has no effect in
+  JSON Schema; the importer drops it with a warning.
+- **Signature.** `%arg0` is the document; each distinct property path
+  (a JSON Pointer such as `/address/city`) adds one `!schema.value`
+  argument, in depth-first declaration order.
+- **Additional properties.** The importer never sets `additional_properties`
+  on `schema.struct` (the lowering does not check undeclared members either
+  way), and `additionalProperties` itself is not supported.
+- **Semantic errors** go through `mlir::emitError` at the keyword: bounds no
+  value satisfies (`minimum > maximum`, `minLength > maxLength`), a
+  non-positive `multipleOf`, a `required` property missing from
+  `properties`, contradicting types and invalid regular expressions.
+
+Syntax errors are reported as `file:line:col` diagnostics, and the parser
+recovers at the next `,`, `}` or `]` to report several errors in one run.
+JSON has no comments, so `--allow-comments` (JSONC-style `//` and `/* */`)
+exists for tests that need `// expected-error` lines with
+`-verify-diagnostics`.
 
 ---
 
@@ -159,6 +237,9 @@ ninja -C build check-schema
 "${MLIR_INSTALL}/bin/llvm-lit" -v --filter=lower-to-std build/test
 ```
 
+> ⚠️ **Paths with spaces.** lit substitutes `%s` and tool paths unquoted,
+> so the suite cannot run from a checkout whose path contains a space.
+
 Inspect a transformation by hand:
 
 ```bash
@@ -169,6 +250,12 @@ Inspect a transformation by hand:
 # Lowering to standard dialects.
 ./build/bin/schema-opt test/Lowering/lower-to-std.mlir \
     --lower-schema-to-std --split-input-file
+
+# Front end stages.
+./build/bin/schema-translate --import-json-schema --dump-tokens examples/person/person.schema.json
+./build/bin/schema-translate --import-json-schema --dump-ast examples/person/person.schema.json
+./build/bin/schema-translate --import-json-schema --mlir-print-debuginfo \
+    examples/person/person.schema.json --emit-trace=person.trace.json
 
 # All the way to LLVM IR.
 ./build/bin/schema-opt test/Lowering/lower-to-std.mlir \
@@ -192,15 +279,20 @@ Inspect a transformation by hand:
 ## 🗂️ Repository layout
 
 ```
-include/Schema/     ODS definitions (.td), public headers, pass interfaces
-lib/Schema/         Dialect registration, verifiers, canonicalizer, lowering
-tools/schema-opt/   mlir-opt-style driver
-test/Dialect/       Round-trip, verifier and canonicalization tests
-test/Lowering/      Dialect-conversion FileCheck tests
-mojo/schema/        Mojo constraint lattices + validators (same rules as the passes)
-mojo/tests/         Mojo tests, including a soundness check of `meet`
-examples/           JSON Schema documents with their `schema` dialect IR
-pixi.toml           Mojo toolchain + task runner
+include/Schema/         ODS definitions (.td), public headers, pass interfaces
+include/Schema/Import/  Front-end headers: lexer, AST, parser, importer, trace
+lib/Schema/             Dialect registration, verifiers, canonicalizer, lowering
+lib/Schema/Import/      JSON Schema front end (MLIRSchemaImport)
+tools/schema-opt/       mlir-opt-style driver
+tools/schema-translate/ mlir-translate-style driver (--import-json-schema)
+test/Dialect/           Round-trip, verifier and canonicalization tests
+test/Lowering/          Dialect-conversion FileCheck tests
+test/Import/            Front-end tests: tokens, AST, IR, diagnostics, trace
+docs/                   Trace format specification
+mojo/schema/            Mojo constraint lattices + validators (same rules as the passes)
+mojo/tests/             Mojo tests, including a soundness check of `meet`
+examples/               JSON Schema documents with their imported `schema` IR
+pixi.toml               Mojo toolchain + task runner
 ```
 
 ---
@@ -237,8 +329,8 @@ pixi run test-mojo
 when either is set, since there is no regex engine here (the compiled
 validator calls into the runtime for them).
 
-See [`examples/person/`](examples/person/) for a schema taken through
-`--schema-canonicalize`, with the same fusion done by the Mojo library.
+See [`examples/person/`](examples/person/) for a schema imported and taken
+through `--schema-canonicalize`, with the same fusion done by the Mojo library.
 
 ## 📜 License
 

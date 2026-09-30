@@ -7,18 +7,27 @@ See `README.md` for the full pipeline, runtime ABI and pass reference.
 
 - `include/Schema/` — ODS (`SchemaDialect.td`, `SchemaOps.td`), headers, pass decls
 - `lib/Schema/` — dialect/ops impl, `SchemaCanonicalizerPass.cpp`, `LowerToStandard.cpp`
+- `include/Schema/Import/`, `lib/Schema/Import/` — JSON Schema front end
+  (`MLIRSchemaImport`): hand-written lexer, recursive-descent parser → AST,
+  importer → `schema` ops located at their JSON keyword, `--emit-trace`
+  writer (format in `docs/trace-format.md`)
 - `tools/schema-opt/` — `mlir-opt`-style driver
-- `test/` — lit + FileCheck tests (`Dialect/Schema/`, `Lowering/`)
+- `tools/schema-translate/` — `mlir-translate`-style driver:
+  `--import-json-schema` with `--dump-tokens`, `--dump-ast`,
+  `--emit-trace=<file>`, `--allow-comments`
+- `test/` — lit + FileCheck tests (`Dialect/Schema/`, `Lowering/`, `Import/`);
+  JSON inputs live in `.test` files unpacked with `split-file`
 - `mojo/schema/` — Mojo library: `StringConstraints` / `NumberConstraints`
   with `subsumes`/`meet` (same rules as `SchemaCanonicalizerPass.cpp`) and
   `validate` (same semantics as `LowerToStandard.cpp`)
 - `mojo/tests/` — mirrors `schema-canonicalize.mlir` + a grid test that
   `meet` never changes a verdict
-- `examples/` — JSON Schema + hand-written `schema` IR pairs
+- `examples/` — JSON Schema + importer-generated `schema` IR pairs
 
 ## Pipeline (short)
 
-`schema.validate_string` / `schema.validate_number` / `schema.struct` on `!schema.value`
+`schema.json` → `schema-translate --import-json-schema` (one op per keyword)
+→ `schema.validate_string` / `schema.validate_number` / `schema.struct` on `!schema.value`
 → `--schema-canonicalize` (subsumption, fusion, vacuous elimination)
 → `--lower-schema-to-std` (`arith`/`scf`/`math` + `func.call @__schema_rt_*`)
 → `--schema-to-llvm-pipeline` → LLVM IR.
@@ -37,6 +46,9 @@ Requires LLVM/MLIR 19+ (verified on 23.1.1); `MLIR_INSTALL` defaults to `brew --
 
 - LLVM is built without RTTI: use `llvm::dyn_cast` / `TypeSwitch`, never `dynamic_cast`.
 - Every behavior change gets a lit test; keep `CHECK` lines tight.
+- Front-end diagnostic tests use `--allow-comments -verify-diagnostics` so the
+  JSON can carry `// expected-error` lines.
+- lit cannot run from a path containing spaces (paths are substituted unquoted).
 - A change to lattice rules or lowered semantics must land in the Mojo library
   (`mojo/schema/lattice.mojo`) in the same commit, with a matching test.
 - Format with Prettier (non-C++) and match the existing LLVM style in C++.
