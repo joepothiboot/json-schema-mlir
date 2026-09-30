@@ -48,7 +48,8 @@ Requires LLVM/MLIR 19+ (verified on 23.1.1); `MLIR_INSTALL` defaults to `brew --
 - Every behavior change gets a lit test; keep `CHECK` lines tight.
 - Front-end diagnostic tests use `--allow-comments -verify-diagnostics` so the
   JSON can carry `// expected-error` lines.
-- lit cannot run from a path containing spaces (paths are substituted unquoted).
+- `test/schema_lit_format.py` quotes `%s`/`%t` (and `lit.cfg.py` tool paths) so
+  the suite runs from checkouts whose path contains spaces.
 - A change to lattice rules or lowered semantics must land in the Mojo library
   (`mojo/schema/lattice.mojo`) in the same commit, with a matching test.
 - Format with Prettier (non-C++) and match the existing LLVM style in C++.

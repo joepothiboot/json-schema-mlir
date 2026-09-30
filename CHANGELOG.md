@@ -18,12 +18,18 @@ All notable changes to this project are documented here.
   after `--schema-canonicalize`, tied to source ranges. Format in
   `docs/trace-format.md` (version 1).
 - `test/Import/`: token, AST, IR, diagnostic and trace tests.
+
 - Mojo library (`mojo/schema/`) with the canonicalizer's constraint lattices
   and the lowered validation semantics, plus tests that check `meet` never
   changes a verdict.
 - `examples/person/`: a JSON Schema, its imported `schema` dialect IR, and
   the canonicalized output.
 - `pixi.toml` for the Mojo toolchain.
+
+### Fixed
+
+- The lit suite now runs from a checkout whose path contains spaces
+  (`%s`, `%S`, `%p`, `%t` and tool paths are shell-quoted).
 
 ## [0.1.0] - 2026-09-07
 

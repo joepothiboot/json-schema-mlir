@@ -1,4 +1,7 @@
 import os
+import re
+import shlex
+import sys
 
 import lit.formats
 from lit.llvm import llvm_config
@@ -6,7 +9,12 @@ from lit.llvm.subst import FindTool, ToolSubst
 
 # -- Suite identity -----------------------------------------------------------
 config.name = "JSON-SCHEMA-MLIR"
-config.test_format = lit.formats.ShTest()
+
+# Quotes %s/%S/%p/%t so the suite runs from paths containing spaces.
+sys.path.insert(0, os.path.dirname(__file__))
+from schema_lit_format import QuotedPathShTest  # noqa: E402
+
+config.test_format = QuotedPathShTest()
 
 # `--split-input-file` chunks are separated by `// -----`. JSON Schema inputs
 # live in `.test` files and are unpacked with `split-file`, because JSON has
@@ -39,6 +47,15 @@ tools = [
 ]
 
 llvm_config.add_tool_substitutions(tools, tool_dirs)
+
+# Quote tool paths too, so they survive a checkout path containing spaces.
+_tool_path = re.compile(
+	"(?:%s)/[\\w.+-]+" % "|".join(re.escape(d) for d in tool_dirs if d)
+)
+config.substitutions = [
+	(key, _tool_path.sub(lambda m: shlex.quote(m.group(0)), value))
+	for key, value in config.substitutions
+]
 
 # Convenience: `// RUN: %schema_canonicalize %s | FileCheck %s`
 config.substitutions.append(

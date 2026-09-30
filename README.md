@@ -237,9 +237,6 @@ ninja -C build check-schema
 "${MLIR_INSTALL}/bin/llvm-lit" -v --filter=lower-to-std build/test
 ```
 
-> ⚠️ **Paths with spaces.** lit substitutes `%s` and tool paths unquoted,
-> so the suite cannot run from a checkout whose path contains a space.
-
 Inspect a transformation by hand:
 
 ```bash
